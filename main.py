@@ -1,45 +1,74 @@
-import logging
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+import sqlite3
+from config import HEAD_ADMINS # Бас админдер тізімін импорттау
 
-from config import BOT_TOKEN
-from keep_alive import keep_alive
+DB_NAME = "bot_database.db"
 
-# Логгингті (жұмыс журналын) қосу
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logging.getLogger("httpx").setLevel(logging.WARNING)
-logger = logging.getLogger(__name__)
+def init_db():
+    """Дерекқорды дайындау және қажетті кестелерді құру"""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
 
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """/start командасына уақытша жауап"""
-    user = update.effective_user
-    await update.message.reply_html(
-        f"Salom, {user.mention_html()}! Bot ishga tushdi. Yaqinda to'liq ishlaydi."
+    # Қолданушылар кестесі (users)
+    # status: 'user' (қарапайым), 'vip'
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER PRIMARY KEY,
+        username TEXT,
+        first_name TEXT,
+        status TEXT DEFAULT 'user'
     )
+    """)
 
-
-def main() -> None:
-    """Ботты іске қосатын негізгі функция"""
-    # Render-дің ұйықтап қалмауы үшін веб-серверді іске қосу
-    keep_alive()
-
-    # Боттың негізін құру
-    application = Application.builder().token(BOT_TOKEN).build()
-
-    # Уақытша /start командасын тіркеу
-    # Нағыз /start логикасын кейін user_handlers.py файлына жазамыз
-    application.add_handler(CommandHandler("start", start))
-
-    # БОЛАШАҚТА: user_handlers.py және admin_handlers.py-ден негізгі хэндлерлерді осында тіркейміз
-
-    logger.info("Бот іске қосылуда...")
+    # Қарапайым админдер кестесі (admins)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS admins (
+        user_id INTEGER PRIMARY KEY
+    )
+    """)
     
-    # Ботты іске қосу (жаңа хабарламаларды тексеруді бастау)
-    application.run_polling()
+    # ... Болашақта аниме, каналдарға арналған кестелер осында қосылады ...
 
+    conn.commit()
+    conn.close()
+    print("Дерекқор (база) сәтті дайындалды.")
 
-if __name__ == "__main__":
-    main()
+def add_user(user_id: int, username: str, first_name: str):
+    """Қолданушыны базаға қосу (егер ол бұрыннан жоқ болса)"""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    
+    # Қолданушының базада бар-жоғын тексеру
+    cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,))
+    if cursor.fetchone() is None:
+        # Егер жоқ болса, жаңадан қосу
+        cursor.execute("INSERT INTO users (user_id, username, first_name) VALUES (?, ?, ?)",
+                       (user_id, username, first_name))
+        conn.commit()
+    
+    conn.close()
+
+def get_user_status(user_id: int) -> str:
+    """Қолданушының статусын анықтайтын негізгі функция"""
+    # 1. Бас админ екенін config файлынан тексеру
+    if user_id in HEAD_ADMINS:
+        return 'bosh_admin'
+
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    # 2. Қарапайым админ екенін базадағы 'admins' кестесінен тексеру
+    cursor.execute("SELECT user_id FROM admins WHERE user_id = ?", (user_id,))
+    if cursor.fetchone():
+        conn.close()
+        return 'oddiy_admin'
+    
+    # 3. VIP статусын базадағы 'users' кестесінен тексеру
+    cursor.execute("SELECT status FROM users WHERE user_id = ?", (user_id,))
+    result = cursor.fetchone()
+    conn.close()
+
+    if result and result[0] == 'vip':
+        return 'vip'
+    
+    # 4. Егер ешқайсысы болмаса, ол - қарапайым қолданушы
+    return 'user'
