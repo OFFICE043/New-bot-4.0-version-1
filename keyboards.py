@@ -1,40 +1,60 @@
-from telegram import ReplyKeyboardMarkup
+from telegram import ReplyKeyboardMarkup, KeyboardButton
 
-# --- Батырмалардың мәтіндері (Өзбекше, Латынша) ---
-
-# Негізгі меню батырмалары
+# --- Button Texts ---
+# Main Menu
 BTN_ANIME_SEARCH = "🔍 Anime izlash"
 BTN_REKLAMA = "📢 Reklama"
 BTN_VIP = "⭐️ Vip"
 BTN_SUPPORT = "👨‍💻 Support"
 BTN_TO_ADMIN_PANEL = "⚙️ Admin panelga o'tish"
 
-# Жалпы батырмалар
-BTN_BACK = "⬅️ Orqaga"
+# Anime Search Menu
+BTN_SEARCH_BY_NAME = "Nomi orqali izlash"
+BTN_SEARCH_BY_CODE = "Kod orqali izlash"
+BTN_ALL_ANIME = "Barcha animelar"
+BTN_TOP_20 = "TOP-20 animelar"
+BTN_SEARCH_VIA_ADMIN = "Admin orqali izlash"
 
-# --- Меню дизайндары (Keyboard Layouts) ---
+# Reklama Menu
+BTN_GET_AD = "Reklama olish"
+BTN_SUGGEST_AD = "Reklama taklif qilish"
 
-# Қарапайым қолданушының негізгі менюі
-user_main_menu_layout = [
-    [BTN_ANIME_SEARCH],
-    [BTN_REKLAMA, BTN_VIP],
-    [BTN_SUPPORT]
-]
-# Жоғарыдағы дизайн бойынша дайын клавиатура
-user_main_menu_keyboard = ReplyKeyboardMarkup(user_main_menu_layout, resize_keyboard=True)
+# VIP Menu
+BTN_VIP_INFO = "VIPda nimalar bor?"
 
+# General Buttons
+BTN_BACK_TO_MAIN = "⬅️ Asosiy menyuga"
+BTN_CANCEL = "❌ Bekor qilish"
 
-# Админнің негізгі менюі (қолданушынікі + админ кнопкасы)
-admin_main_menu_layout = [
-    [BTN_ANIME_SEARCH],
-    [BTN_REKLAMA, BTN_VIP],
-    [BTN_SUPPORT],
-    [BTN_TO_ADMIN_PANEL] # Админге арналған қосымша кнопка
-]
-# Админге арналған дайын клавиатура
-admin_main_menu_keyboard = ReplyKeyboardMarkup(admin_main_menu_layout, resize_keyboard=True)
+# --- Keyboard Layouts ---
 
+# User Main Menu
+user_main_menu_keyboard = ReplyKeyboardMarkup([
+    [BTN_ANIME_SEARCH], [BTN_REKLAMA, BTN_VIP], [BTN_SUPPORT]
+], resize_keyboard=True)
 
-# "Артқа" кнопкасы бар клавиатура
-back_keyboard_layout = [[BTN_BACK]]
-back_keyboard = ReplyKeyboardMarkup(back_keyboard_layout, resize_keyboard=True)
+# Admin Main Menu
+admin_main_menu_keyboard = ReplyKeyboardMarkup([
+    [BTN_ANIME_SEARCH], [BTN_REKLAMA, BTN_VIP], [BTN_SUPPORT], [BTN_TO_ADMIN_PANEL]
+], resize_keyboard=True)
+
+# Anime Search Menu
+anime_search_menu_keyboard = ReplyKeyboardMarkup([
+    [BTN_SEARCH_BY_NAME, BTN_SEARCH_BY_CODE],
+    [BTN_ALL_ANIME, BTN_TOP_20],
+    [BTN_SEARCH_VIA_ADMIN],
+    [BTN_BACK_TO_MAIN]
+], resize_keyboard=True)
+
+# Reklama Menu
+reklama_menu_keyboard = ReplyKeyboardMarkup([
+    [BTN_GET_AD], [BTN_SUGGEST_AD], [BTN_BACK_TO_MAIN]
+], resize_keyboard=True)
+
+# VIP Menu
+vip_menu_keyboard = ReplyKeyboardMarkup([
+    [BTN_VIP_INFO], [BTN_BACK_TO_MAIN]
+], resize_keyboard=True)
+
+# Cancel Keyboard (for conversations)
+cancel_keyboard = ReplyKeyboardMarkup([[BTN_CANCEL]], resize_keyboard=True)
