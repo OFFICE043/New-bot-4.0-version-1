@@ -144,3 +144,52 @@ def get_setting(key: str) -> str:
     except Exception as e:
         logger.error(f"'{key}' sozlamasini olishda xatolik: {e}")
         return None
+
+# database/db_manager.py
+# (Файлдың басы өзгеріссіз)
+# ...
+# get_setting(key: str) функциясынан кейін мыналарды қосыңыз:
+
+def set_setting(key: str, value: str):
+    """Баптауды жаңартады немесе жаңасын қосады."""
+    sql = "INSERT INTO settings (key, value) VALUES (%s, %s) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;"
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, (key, value))
+                conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"'{key}' sozlamasini o'rnatishda xatolik: {e}")
+        return False
+
+def set_user_role(user_id: int, role: str, vip_expires_at=None):
+    """Пайдаланушының рөлін және VIP мерзімін жаңартады."""
+    sql = "UPDATE users SET role = %s, vip_expires_at = %s WHERE user_id = %s;"
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Егер пайдаланушы жоқ болса, алдымен қосу
+                cur.execute("INSERT INTO users (user_id) VALUES (%s) ON CONFLICT DO NOTHING;", (user_id,))
+                cur.execute(sql, (role, vip_expires_at, user_id))
+                conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Foydalanuvchi {user_id} rolini o'zgartirishda xatolik: {e}")
+        return False
+
+def get_vip_users():
+    """Барлық VIP пайдаланушылардың тізімін қайтарады."""
+    sql = "SELECT user_id, first_name, username, vip_expires_at FROM users WHERE role = 'vip' ORDER BY vip_expires_at;"
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql)
+                return cur.fetchall()
+    except Exception as e:
+        logger.error(f"VIP a'zolar ro'yxatini olishda xatolik: {e}")
+        return []
+        
+# ... (Бұрынғы функциялар өзгеріссіз қалады) ...
+# find_anime_by_name, find_anime_by_code, get_all_animes_paginated, get_top_viewed_animes
+
