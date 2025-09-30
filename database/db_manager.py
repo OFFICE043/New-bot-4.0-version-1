@@ -47,7 +47,6 @@ def init_db():
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(create_tables_sql)
-                # Бастапқы VIP сипаттамасын қосу
                 cur.execute(
                     "INSERT INTO settings (key, value) VALUES (%s, %s) ON CONFLICT (key) DO NOTHING",
                     ('vip_description', "👑 VIP a'zolik haqida ma'lumot shu yerda bo'ladi.")
@@ -63,7 +62,6 @@ def init_db():
         logger.error(f"Jadvallarni yaratishda xatolik: {e}")
 
 def add_or_update_user(user_id: int, username: str, first_name: str):
-    """Жаңа пайдаланушыны қосады немесе ескісінің деректерін жаңартады."""
     sql = "INSERT INTO users (user_id, username, first_name) VALUES (%s, %s, %s) ON CONFLICT (user_id) DO UPDATE SET username = EXCLUDED.username, first_name = EXCLUDED.first_name;"
     try:
         with get_db_connection() as conn:
@@ -74,7 +72,6 @@ def add_or_update_user(user_id: int, username: str, first_name: str):
         logger.error(f"Foydalanuvchi {user_id} ni qo'shishda/yangilashda xatolik: {e}")
 
 def get_user_role(user_id: int) -> str:
-    """Пайдаланушының рөлін (user, vip, admin) қайтарады."""
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -84,8 +81,6 @@ def get_user_role(user_id: int) -> str:
     except Exception as e:
         logger.error(f"Foydalanuvchi {user_id} rolini olishda xatolik: {e}")
         return 'user'
-
-# --- Анимемен жұмыс істеу функциялары ---
 
 def find_anime_by_name(name_query: str):
     sql = "SELECT code, name, description FROM animes WHERE name ILIKE %s"
@@ -132,7 +127,6 @@ def get_top_viewed_animes(limit: int = 20):
         logger.error(f"Eng ko'p ko'rilgan animelarni olishda xatolik: {e}")
         return []
 
-# --- Баптаулармен жұмыс ---
 def get_setting(key: str) -> str:
     sql = "SELECT value FROM settings WHERE key = %s"
     try:
@@ -145,13 +139,7 @@ def get_setting(key: str) -> str:
         logger.error(f"'{key}' sozlamasini olishda xatolik: {e}")
         return None
 
-# database/db_manager.py
-# (Файлдың басы өзгеріссіз)
-# ...
-# get_setting(key: str) функциясынан кейін мыналарды қосыңыз:
-
 def set_setting(key: str, value: str):
-    """Баптауды жаңартады немесе жаңасын қосады."""
     sql = "INSERT INTO settings (key, value) VALUES (%s, %s) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;"
     try:
         with get_db_connection() as conn:
@@ -164,12 +152,10 @@ def set_setting(key: str, value: str):
         return False
 
 def set_user_role(user_id: int, role: str, vip_expires_at=None):
-    """Пайдаланушының рөлін және VIP мерзімін жаңартады."""
     sql = "UPDATE users SET role = %s, vip_expires_at = %s WHERE user_id = %s;"
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
-                # Егер пайдаланушы жоқ болса, алдымен қосу
                 cur.execute("INSERT INTO users (user_id) VALUES (%s) ON CONFLICT DO NOTHING;", (user_id,))
                 cur.execute(sql, (role, vip_expires_at, user_id))
                 conn.commit()
@@ -179,7 +165,6 @@ def set_user_role(user_id: int, role: str, vip_expires_at=None):
         return False
 
 def get_vip_users():
-    """Барлық VIP пайдаланушылардың тізімін қайтарады."""
     sql = "SELECT user_id, first_name, username, vip_expires_at FROM users WHERE role = 'vip' ORDER BY vip_expires_at;"
     try:
         with get_db_connection() as conn:
@@ -189,7 +174,3 @@ def get_vip_users():
     except Exception as e:
         logger.error(f"VIP a'zolar ro'yxatini olishda xatolik: {e}")
         return []
-        
-# ... (Бұрынғы функциялар өзгеріссіз қалады) ...
-# find_anime_by_name, find_anime_by_code, get_all_animes_paginated, get_top_viewed_animes
-
